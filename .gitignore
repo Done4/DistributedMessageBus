@@ -1,0 +1,14 @@
+# 忽略构建目录
+build/
+bin/
+obj/
+
+# 忽略编辑器配置
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 忽略临时文件
+*.log
+*.tmp
