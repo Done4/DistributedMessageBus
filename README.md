@@ -83,9 +83,11 @@ MsgMiddleware::instance().registerRemoteNode("127.0.0.1", 10002);
 ### 发布与订阅
 ```cpp
 // 订阅
-MsgMiddleware::instance().subscribe(MY_TOPIC_ID, [](const Message* msg, Message* reply) {
-    // 处理逻辑
-});
+MsgMiddleware::instance().subscribe(MY_TOPIC_ID, {[](const Message *msg, void *data0, void *data1)
+                                               {
+                                                   // 处理逻辑
+                                               },
+                                               0, 0});
 
 // 发布
 MsgMiddleware::instance().publish(MY_TOPIC_ID, data, size);
