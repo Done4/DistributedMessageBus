@@ -7,9 +7,9 @@
 using namespace std;
 
 // 简单的消息处理回调
-void myHandler(const Message* msg, Message* reply) {
+void myHandler(const Message* msg, void* data0, void* data1) {
     if (!msg) return;
-    cout << "[Node] Received message type: " << msg->header.type 
+    cout << "[Node] Received message type: " << msg->header.type
          << " from module: " << msg->header.sourceModuleId 
          << " payload size: " << msg->header.length << endl;
     if (1001 == msg->header.type && msg->payload) {
@@ -32,7 +32,7 @@ int main()
     MsgMiddleware::instance().init(&cfg);
 
     // 订阅消息
-    MsgMiddleware::instance().subscribe(1001, myHandler);
+    MsgMiddleware::instance().subscribe(1001, {myHandler, 0, 0});
 
     // 注册远程节点（跨设备通信关键）
     MsgMiddleware::instance().registerRemoteNode("127.0.0.1", 10002);

@@ -18,7 +18,7 @@ public:
     static MsgMiddleware& instance();
 
     bool init(const MiddlewareConfig* cfg);
-    void subscribe(int type, MsgHandler handler);
+    void subscribe(int type, MsgNotice handler);
     void publish(int type, const void* data, size_t size,
                  bool broadcast=false, bool needReply=false, Message* reply=nullptr);
 

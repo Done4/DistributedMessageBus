@@ -8,8 +8,8 @@
 struct MSG_API MsgHeader {
     int sourceModuleId;  // 来源模块ID
     int type;            // 消息类型
-    bool broadcast;      // 是否广播
-    bool needReply;      // 是否需要回复
+    // bool broadcast;      // 是否广播
+    // bool needReply;      // 是否需要回复
     uint32_t length;     // payload长度
 };
 
@@ -25,6 +25,12 @@ inline void MessageFree(Message* msg) {
     }
 }
 
-typedef void (*MsgHandler)(const Message* msg, Message* reply);
+typedef void (*MsgHandler)(const Message* msg, void* data0, void* data1);
+
+struct MsgNotice {
+    MsgHandler handle;
+    void* data0;
+    void* data1;
+};
 
 #endif // MESSAGE_API_H

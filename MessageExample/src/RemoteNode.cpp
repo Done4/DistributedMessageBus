@@ -10,12 +10,24 @@ using namespace std;
 // 定义一个全局统一的消息主题 (Topic/MsgId)
 const int TOPIC_DATA_SYNC = 1001;
 
-void remoteHandler(const Message* msg, Message* reply) {
-    if (!msg) return;
-    cout << "[Subscriber] Topic: " << msg->header.type 
-         << " | From Module: " << msg->header.sourceModuleId 
-         << " | Content: " << string((char*)msg->payload, msg->header.length) << endl;
-}
+class TestRemote {
+public:
+    static void remoteHandler(const Message* msg, void* data0, void* data1) {
+        if (!msg) return;
+        cout << "[Subscriber] Topic: " << msg->header.type
+             << " | From Module: " << msg->header.sourceModuleId
+                << endl;
+        TestRemote *pthis = static_cast<TestRemote *>(data0);
+        if (pthis != nullptr) {
+            string payload((char*)msg->payload, msg->header.length);
+            pthis->printfRemoteMsg(payload);
+        }
+    }
+private:
+    void printfRemoteMsg(const string& msg) {
+        cout << "printfRemoteMsg:" << msg << endl;
+    }
+};
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -37,8 +49,9 @@ int main(int argc, char* argv[]) {
 
     MsgMiddleware::instance().init(&cfg);
 
+    TestRemote remoteNode;
     // 订阅同步主题
-    MsgMiddleware::instance().subscribe(TOPIC_DATA_SYNC, remoteHandler);
+    MsgMiddleware::instance().subscribe(TOPIC_DATA_SYNC, {&TestRemote::remoteHandler, &remoteNode, 0});
 
     // 只有在提供了参数或使用默认值时注册 Broker
     cout << "[Node] Connecting to Broker at " << brokerIp << ":" << brokerPort << endl;

@@ -33,7 +33,7 @@ void NetworkServiceManager::addPeer(const char* ip, int port) {
     std::lock_guard<std::mutex> lock(connMutex_);
     peerAddresses_.push_back({std::string(ip), port});
     
-    // Broker 模式下，我们通常只连接一个中心节点
+    // Broker 模式下，只连接一个中心节点
     if (moduleConnections_.empty()) {
         connectToNode(ip, port);
     }
@@ -86,7 +86,7 @@ void NetworkServiceManager::sendToSocket(int sock, const Message& msg) {
 int NetworkServiceManager::connectToNode(const char* ip, int port) {
     if (!ip) return -1;
 
-    // 关键修复：如果已有连接，直接返回，不再重复连接
+    // 如果已有连接，直接返回，不再重复连接
     if (!moduleConnections_.empty()) {
         return moduleConnections_.begin()->second;
     }
@@ -110,7 +110,6 @@ int NetworkServiceManager::connectToNode(const char* ip, int port) {
 
     std::cout << "[Network] Connected to Message Broker at " << ip << ":" << port << std::endl;
     
-    // 关键修复：立即将连接加入连接池，使用 0 作为 Broker 的占位 ID
     const int BROKER_PLACEHOLDER_ID = 0;
     moduleConnections_[BROKER_PLACEHOLDER_ID] = sock;
 

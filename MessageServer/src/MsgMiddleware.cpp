@@ -9,9 +9,8 @@
 #include <condition_variable>
 #include <cstring>
 
-// 内部实现结构，隐藏所有标准库组件
 struct MsgMiddlewareImpl {
-    std::unordered_map<int, std::vector<MsgHandler>> subscribers;
+    std::unordered_map<int, std::vector<MsgNotice>> subscribers;
     std::queue<Message> messageQueue;
     std::mutex mutex;
     std::mutex queueMutex;
@@ -56,7 +55,6 @@ void MsgMiddleware::ensureNetworkService()
     {
         // impl_->networkService = std::make_unique<NetworkServiceManager>(config_.moduleId, this); //C++14
         impl_->networkService = std::unique_ptr<NetworkServiceManager>(new NetworkServiceManager(config_.moduleId, this));
-        // impl_->networkService->start();
         std::cout << "[Middleware] Network service initialized on-demand for Module " << config_.moduleId << std::endl;
     }
 }
@@ -71,7 +69,7 @@ void MsgMiddleware::registerRemoteNode(const char* ip, int port)
     }
 }
 
-void MsgMiddleware::subscribe(int type, MsgHandler handler)
+void MsgMiddleware::subscribe(int type, MsgNotice handler)
 {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     impl_->subscribers[type].push_back(handler);
@@ -83,8 +81,8 @@ void MsgMiddleware::publish(int type, const void *data, size_t size,
     Message msg;
     msg.header.sourceModuleId = config_.moduleId;
     msg.header.type = type;
-    msg.header.broadcast = broadcast;
-    msg.header.needReply = needReply;
+    // msg.header.broadcast = broadcast;
+    // msg.header.needReply = needReply;
     msg.header.length = static_cast<uint32_t>(size);
     msg.payload = nullptr;
 
@@ -122,7 +120,7 @@ void MsgMiddleware::dispatchMessage(const Message* msg, bool fromNetwork)
         return;
     }
 
-    std::vector<MsgHandler> handlers;
+    std::vector<MsgNotice> handlers;
     {
         std::lock_guard<std::mutex> lock(impl_->mutex);
         auto it = impl_->subscribers.find(msg->header.type);
@@ -132,20 +130,21 @@ void MsgMiddleware::dispatchMessage(const Message* msg, bool fromNetwork)
     
     for (auto &h : handlers)
     {
-        Message localReply;
-        localReply.header = {0};
-        localReply.payload = nullptr;
+        h.handle(msg, h.data0, h.data1);
+        // Message localReply;
+        // localReply.header = {0};
+        // localReply.payload = nullptr;
         
-        h(msg, msg->header.needReply ? &localReply : nullptr);
+        // h(msg, msg->header.needReply ? &localReply : nullptr);
         
-        if (msg->header.needReply && localReply.payload && localReply.header.length > 0)
-        {
-            // 回复逻辑：如果原消息来自网络，回复也发往网络
-            if (impl_->networkService)
-                impl_->networkService->sendReply(msg->header.sourceModuleId, localReply);
-        }
+        // if (msg->header.needReply && localReply.payload && localReply.header.length > 0)
+        // {
+        //     // 回复逻辑：如果原消息来自网络，回复也发往网络
+        //     if (impl_->networkService)
+        //         impl_->networkService->sendReply(msg->header.sourceModuleId, localReply);
+        // }
         
-        MessageFree(&localReply);
+        // MessageFree(&localReply);
     }
 }
 

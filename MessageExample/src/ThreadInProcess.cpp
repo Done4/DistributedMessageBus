@@ -9,12 +9,39 @@ using namespace std;
 // 消息类型定义
 const int MSG_TYPE_TASK = 1001;
 
-void threadHandler(const Message* msg, Message* reply) {
+void threadHandler(const Message* msg, void* data0, void* data1) {
     if (!msg) return;
     string payload((char*)msg->payload, msg->header.length);
     cout << "[Thread-Sub] Received task in thread " << this_thread::get_id() 
          << " | Content: " << payload << endl;
 }
+
+class TestA
+{
+public:
+    void subMsg(const int id) {
+        MsgMiddleware::instance().subscribe(id, {&TestA::handlerMsg, this, 0});
+    }
+    void printfMsg(const string& msg) {
+        cout << "printfMsg:" << msg << endl;
+    }
+    static void handlerMsg(const Message* msg, void* data0, void* data1) {
+        if (!msg) return;
+        TestA *pthis = static_cast<TestA *>(data0);
+        if (pthis != nullptr) {
+            string payload((char*)msg->payload, msg->header.length);
+            pthis->printfMsg(payload);
+        }
+    }
+};
+
+class TestB
+{
+public:
+    void publishMsg(int id, const char* data) {
+        MsgMiddleware::instance().publish(id, data, strlen(data));
+    }
+};
 
 int main() {
     cout << "--- Starting In-Process Thread Communication Example ---" << endl;
@@ -27,9 +54,11 @@ int main() {
 
     MsgMiddleware::instance().init(&cfg);
 
-    MsgMiddleware::instance().subscribe(MSG_TYPE_TASK, threadHandler);
     string data = "Hello from producer thread!";
-    MsgMiddleware::instance().publish(MSG_TYPE_TASK, data.c_str(), data.length());
+    TestA objA;
+    TestB objB;
+    objA.subMsg(MSG_TYPE_TASK);
+    objB.publishMsg(MSG_TYPE_TASK, data.c_str());
     while(true) {
         this_thread::sleep_for(chrono::seconds(1));
     }
